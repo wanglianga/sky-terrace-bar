@@ -1,0 +1,15 @@
+services:
+  sky-terrace-bar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sky-terrace-bar
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - sky-net
+
+networks:
+  sky-net:
+    driver: bridge
