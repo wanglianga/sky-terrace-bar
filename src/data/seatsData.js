@@ -9,7 +9,8 @@ export const ZONES = [
     windLevel: '中等',
     hasRainCover: true,
     color: '#ff6b35',
-    premium: true
+    premium: true,
+    viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=city%20rooftop%20bar%20sunset%20view%2C%20golden%20hour%2C%20orange%20purple%20sky%2C%20sun%20dipping%20below%20skyscrapers%2C%20silhouette%20of%20city%20skyline%2C%20luxury%20terrace%20atmosphere%2C%20wide%20angle%20panoramic%20view&image_size=landscape_16_9'
   },
   {
     id: 'north',
@@ -21,7 +22,8 @@ export const ZONES = [
     windLevel: '偏高',
     hasRainCover: true,
     color: '#00d4ff',
-    premium: true
+    premium: true,
+    viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stunning%20city%20skyline%20view%20from%20rooftop%20bar%2C%20modern%20skyscrapers%20with%20glass%20facades%20reflecting%20twilight%20sky%2C%20purple%20blue%20hour%20atmosphere%2C%20panoramic%20metropolitan%20view&image_size=landscape_16_9'
   },
   {
     id: 'south',
@@ -33,7 +35,8 @@ export const ZONES = [
     windLevel: '较低',
     hasRainCover: false,
     color: '#10b981',
-    premium: false
+    premium: false,
+    viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=riverside%20night%20view%20from%20rooftop%20bar%2C%20wide%20river%20with%20reflecting%20city%20lights%2C%20illuminated%20bridge%20spanning%20across%2C%20sparkling%20water%2C%20warm%20golden%20lights%20on%20opposite%20bank&image_size=landscape_16_9'
   },
   {
     id: 'east',
@@ -45,7 +48,8 @@ export const ZONES = [
     windLevel: '低',
     hasRainCover: true,
     color: '#ffd700',
-    premium: false
+    premium: false,
+    viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=luxury%20rooftop%20bar%20interior%2C%20elegant%20bartender%20mixing%20cocktails%20at%20marble%20counter%2C%20backlit%20liquor%20bottles%20display%2C%20warm%20ambient%20lighting%2C%20cozy%20atmosphere%20with%20city%20view%20through%20windows&image_size=landscape_16_9'
   },
   {
     id: 'indoor',
@@ -58,7 +62,8 @@ export const ZONES = [
     hasRainCover: true,
     color: '#9b59b6',
     premium: true,
-    isIndoor: true
+    isIndoor: true,
+    viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=luxury%20private%20VIP%20lounge%20interior%2C%20plush%20velvet%20sofas%2C%20crystal%20chandelier%2C%20ambient%20purple%20mood%20lighting%2C%20floor%20to%20ceiling%20windows%20showing%20city%20night%20skyline%2C%20exclusive%20upscale%20atmosphere&image_size=landscape_16_9'
   }
 ]
 

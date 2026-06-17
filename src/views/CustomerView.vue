@@ -118,7 +118,7 @@
           <div class="tip-card">
             <span class="tip-icon">💰</span>
             <h4>订金规则</h4>
-            <p>预订需支付30%订金，到店后可抵扣消费；取消预订，迟到超30分钟订金不退</p>
+            <p>预订需支付<strong>有效低消价×30%</strong>作为订金，到店后可抵扣消费；取消预订或迟到超30分钟订金不退</p>
           </div>
           <div class="tip-card">
             <span class="tip-icon">🎂</span>
@@ -139,11 +139,11 @@
               <span>低消合计</span>
               <strong>¥{{ getSelectedTotalPrice() }}</strong>
             </div>
-            <div class="deposit-note">订金 ¥{{ getSelectedTotalDeposit() }}</div>
+            <div class="deposit-note">订金（有效低消×30%） ¥{{ getSelectedTotalDeposit() }}</div>
           </div>
         </div>
         <button class="checkout-btn" @click="handleCheckout">
-          立即预订 · 支付订金
+          立即预订 · 支付订金（有效低消×30%）
         </button>
       </footer>
       <div :style="{ height: store.selectedSeatIds.length > 0 ? '100px' : '20px' }"></div>
@@ -206,7 +206,7 @@ function onSeatConfirm() {
 }
 
 function handleCheckout() {
-  alert(`预订成功！\n\n座位：${selectedNames.value}\n时段：${store.selectedTimeSlot?.name}\n订金：¥${getSelectedTotalDeposit()}\n\n（演示模式，实际请对接支付系统）`)
+  alert(`预订成功！\n\n座位：${selectedNames.value}\n时段：${store.selectedTimeSlot?.name}\n有效低消合计：¥${getSelectedTotalPrice()}\n订金（有效低消×30%）：¥${getSelectedTotalDeposit()}\n\n（演示模式，实际请对接支付系统)`)
 }
 </script>
 

@@ -13,6 +13,17 @@
 
     <div class="view-photo-section">
       <div class="view-image" :style="viewImageStyle">
+        <img
+          v-if="!photoLoadError"
+          :src="viewPhotoUrl"
+          :alt="zone?.name + '视野照片'"
+          class="photo-img"
+          @error="handlePhotoError"
+        />
+        <div v-else class="photo-fallback">
+          <span class="fallback-icon">📷</span>
+          <span class="fallback-text">{{ zone?.name }}视野</span>
+        </div>
         <div class="view-overlay">
           <div class="view-tags">
             <span class="view-tag sunset" v-if="zone?.sunsetView >= 70">🌅 落日满分</span>
@@ -49,8 +60,8 @@
       <div class="info-item">
         <div class="info-icon">💳</div>
         <div class="info-content">
-          <div class="info-label">预付订金</div>
-          <div class="info-value">¥{{ seat.deposit }} <span class="tip">(到店退)</span></div>
+          <div class="info-label">预付订金 (有效低消×30%)</div>
+          <div class="info-value">¥{{ effectiveDeposit }} <span class="tip">(到店可退)</span></div>
         </div>
       </div>
     </div>
@@ -117,16 +128,20 @@
         @click="handleConfirm"
         :style="{ background: confirmBtnBg }"
       >
-        {{ seat.status === 'available' ? `选择此座位 · ¥${seat.deposit}订金` : statusText }}
+        {{ seat.status === 'available' ? `选择此座位 · 订金 ¥${effectiveDeposit} (有效低消×30%)` : statusText }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ZONES, SEAT_TYPES } from '../data/seatsData'
-import { store, getSeatEffectivePrice, toggleSeatSelection } from '../store/bookingStore'
+import { store, getSeatEffectivePrice, getSeatDeposit, toggleSeatSelection } from '../store/bookingStore'
+
+watch(() => props.seat?.id, () => {
+  resetPhotoError()
+})
 
 const props = defineProps({
   seat: { type: Object, default: null }
@@ -142,6 +157,7 @@ const zoneColor = computed(() => zone.value?.color || '#ff6b35')
 const seatTypeInfo = computed(() => SEAT_TYPES.find(t => t.id === props.seat?.type))
 const seatTypeName = computed(() => seatTypeInfo.value?.name || '座位')
 const effectivePrice = computed(() => props.seat ? getSeatEffectivePrice(props.seat) : 0)
+const effectiveDeposit = computed(() => props.seat ? getSeatDeposit(props.seat) : 0)
 
 const statusText = computed(() => {
   const map = { available: '可预订', occupied: '已入座', reserved: '已预订', held: '保留中', combined: '已拼桌' }
@@ -154,8 +170,17 @@ function getSeatIcon(type) {
   return seatTypeInfo.value?.icon || '🪑'
 }
 
-const viewImageStyle = computed(() => {
-  const zoneId = props.seat?.zoneId
+const photoLoadError = ref(false)
+
+const viewPhotoUrl = computed(() => {
+  if (photoLoadError.value) {
+    return fallbackPhotoUrl.value
+  }
+  return zone.value?.viewImage || fallbackPhotoUrl.value
+})
+
+const fallbackPhotoUrl = computed(() => {
+  const zoneId = props.seat?.zoneId || 'west'
   const gradients = {
     west: 'linear-gradient(180deg, #2d1b4e 0%, #c94b6a 35%, #ff8c42 70%, #ffd700 100%)',
     north: 'linear-gradient(180deg, #1a1f3a 0%, #4a6fa5 40%, #718096 70%, #a0aec0 100%)',
@@ -163,8 +188,31 @@ const viewImageStyle = computed(() => {
     east: 'linear-gradient(180deg, #3d1f5c 0%, #5c3d7a 40%, #8b5cf6 70%, #c4b5fd 100%)',
     indoor: 'linear-gradient(180deg, #1a1033 0%, #2d1b4e 35%, #4c1d95 65%, #7c3aed 100%)'
   }
-  return { background: gradients[zoneId] || gradients.west }
+  return ''
 })
+
+const viewImageStyle = computed(() => {
+  if (photoLoadError.value) {
+    const zoneId = props.seat?.zoneId || 'west'
+    const gradients = {
+      west: 'linear-gradient(180deg, #2d1b4e 0%, #c94b6a 35%, #ff8c42 70%, #ffd700 100%)',
+      north: 'linear-gradient(180deg, #1a1f3a 0%, #4a6fa5 40%, #718096 70%, #a0aec0 100%)',
+      south: 'linear-gradient(180deg, #1e3a5f 0%, #2d5a87 35%, #3d7ab0 65%, #5ba3d4 100%)',
+      east: 'linear-gradient(180deg, #3d1f5c 0%, #5c3d7a 40%, #8b5cf6 70%, #c4b5fd 100%)',
+      indoor: 'linear-gradient(180deg, #1a1033 0%, #2d1b4e 35%, #4c1d95 65%, #7c3aed 100%)'
+    }
+    return { background: gradients[zoneId] }
+  }
+  return {}
+})
+
+function handlePhotoError() {
+  photoLoadError.value = true
+}
+
+function resetPhotoError() {
+  photoLoadError.value = false
+}
 
 function handleConfirm() {
   if (props.seat) {
@@ -240,10 +288,52 @@ function handleConfirm() {
 
 .view-image {
   position: relative;
-  height: 160px;
+  height: 180px;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.4);
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.view-image:hover .photo-img {
+  transform: scale(1.05);
+}
+
+.photo-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.fallback-icon {
+  font-size: 36px;
+  opacity: 0.7;
+}
+
+.fallback-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.view-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.5) 100%);
+  pointer-events: none;
 }
 
 .view-overlay {

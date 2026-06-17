@@ -158,9 +158,13 @@ export function getSelectedTotalPrice() {
   }, 0)
 }
 
+export function getSeatDeposit(seat) {
+  return Math.round(getSeatEffectivePrice(seat) * 0.3)
+}
+
 export function getSelectedTotalDeposit() {
   return store.selectedSeatIds.reduce((sum, id) => {
     const seat = store.seats.find(s => s.id === id)
-    return sum + (seat?.deposit || 0)
+    return sum + (seat ? getSeatDeposit(seat) : 0)
   }, 0)
 }

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5173",
+    "dev": "vite --host 0.0.0.0 --port 5174",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
@@ -15,5 +15,18 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
     "vite": "^5.2.0"
-  }
+  },
+  "description": "基于 Vue3 + Vite 构建的城市高空露台酒吧预订系统，包含顾客手机端和店员平板端双视角。",
+  "main": "vite.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanglianga/sky-terrace-bar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wanglianga/sky-terrace-bar/issues"
+  },
+  "homepage": "https://github.com/wanglianga/sky-terrace-bar#readme"
 }
