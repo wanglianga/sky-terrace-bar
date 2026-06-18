@@ -144,12 +144,14 @@ npm run preview
 wl-341/
 ├── src/
 │   ├── components/
-│   │   ├── SkyBackground.vue     # 动态天空与城市视觉（日落→夜间）
-│   │   ├── SeatMap.vue           # 分区座位图（顾客+店员复用）
-│   │   ├── TimeSlotBar.vue       # 5 档时段选择条
-│   │   ├── SeatDetail.vue        # 座位详情弹窗（视野/人数/生日/夜景）
-│   │   ├── PackagesSection.vue   # 低消套餐网格
-│   │   └── LiveSchedule.vue      # 驻唱演出时间线
+│   │   ├── SkyBackground.vue         # 动态天空与城市视觉（日落→夜间）
+│   │   ├── SeatMap.vue               # 分区座位图（顾客+店员复用）
+│   │   ├── TimeSlotBar.vue           # 5 档时段选择条
+│   │   ├── SeatDetail.vue            # 座位详情弹窗（视野/人数/生日/夜景）
+│   │   ├── PackagesSection.vue       # 低消套餐网格
+│   │   ├── LiveSchedule.vue          # 驻唱演出时间线
+│   │   ├── SunsetRecommendation.vue  # 晚霞座位推荐卡片
+│   │   └── BirthdayDecorPreview.vue  # 生日布置预览组件
 │   ├── views/
 │   │   ├── CustomerView.vue      # 顾客手机端主页面
 │   │   └── StaffView.vue         # 店员平板端主页面

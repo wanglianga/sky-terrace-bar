@@ -1,5 +1,5 @@
 import { reactive, computed, ref } from 'vue'
-import { SEATS, ZONES, TIME_SLOTS, PACKAGES, WEATHER_INFO } from '../data/seatsData'
+import { SEATS, ZONES, TIME_SLOTS, PACKAGES, WEATHER_INFO, BIRTHDAY_DECOR_ITEMS, CLOUD_COVERAGE_OPTIONS, SUNSET_DATE_FACTORS, SEAT_TYPES } from '../data/seatsData'
 
 export const store = reactive({
   seats: JSON.parse(JSON.stringify(SEATS)),
@@ -13,7 +13,17 @@ export const store = reactive({
   rainCoverOpen: WEATHER_INFO.rainCoverOpen,
   heldSeats: {},
   combineRequests: [],
-  priceModifications: {}
+  priceModifications: {},
+  closedZones: [],
+  zoneRelocations: {},
+  selectedCloudCoverage: 'light',
+  selectedDate: new Date().toISOString().split('T')[0],
+  birthdayDecor: {
+    enabled: false,
+    selectedItems: [],
+    customText: ''
+  },
+  showSunsetRecommendation: true
 })
 
 export const currentTime = ref(new Date())
@@ -167,4 +177,160 @@ export function getSelectedTotalDeposit() {
     const seat = store.seats.find(s => s.id === id)
     return sum + (seat ? getSeatDeposit(seat) : 0)
   }, 0)
+}
+
+export function closeZone(zoneId) {
+  if (!store.closedZones.includes(zoneId)) {
+    store.closedZones.push(zoneId)
+  }
+}
+
+export function openZone(zoneId) {
+  const idx = store.closedZones.indexOf(zoneId)
+  if (idx > -1) {
+    store.closedZones.splice(idx, 1)
+    delete store.zoneRelocations[zoneId]
+  }
+}
+
+export function setZoneRelocation(zoneId, targetZoneId) {
+  store.zoneRelocations[zoneId] = targetZoneId
+}
+
+export function getZoneRelocation(zoneId) {
+  return store.zoneRelocations[zoneId] || null
+}
+
+export function isZoneClosed(zoneId) {
+  return store.closedZones.includes(zoneId)
+}
+
+export function setCloudCoverage(cloudId) {
+  store.selectedCloudCoverage = cloudId
+}
+
+export function setSelectedDate(dateStr) {
+  store.selectedDate = dateStr
+}
+
+export function toggleBirthdayDecor() {
+  store.birthdayDecor.enabled = !store.birthdayDecor.enabled
+  if (!store.birthdayDecor.enabled) {
+    store.birthdayDecor.selectedItems = []
+    store.birthdayDecor.customText = ''
+  }
+}
+
+export function toggleDecorItem(itemId) {
+  const idx = store.birthdayDecor.selectedItems.indexOf(itemId)
+  if (idx > -1) {
+    store.birthdayDecor.selectedItems.splice(idx, 1)
+  } else {
+    store.birthdayDecor.selectedItems.push(itemId)
+  }
+}
+
+export function getSelectedDecorItems() {
+  return BIRTHDAY_DECOR_ITEMS.filter(item => store.birthdayDecor.selectedItems.includes(item.id))
+}
+
+export function getTotalDecorPrice() {
+  return getSelectedDecorItems().reduce((sum, item) => sum + item.price, 0)
+}
+
+export function getTotalSetupTime() {
+  return getSelectedDecorItems().reduce((sum, item) => sum + item.setupTime, 0)
+}
+
+export function getDateFactor() {
+  const month = new Date(store.selectedDate).getMonth() + 1
+  const factor = SUNSET_DATE_FACTORS.find(f => f.month === month)
+  return factor || { factor: 1, sunsetTime: '18:30', goldenHour: 40 }
+}
+
+export function getCloudFactor() {
+  return CLOUD_COVERAGE_OPTIONS.find(c => c.id === store.selectedCloudCoverage) || CLOUD_COVERAGE_OPTIONS[1]
+}
+
+export function calculateSunsetScore(zone) {
+  if (!zone?.sunsetQuality || zone.isIndoor) return 0
+  const q = zone.sunsetQuality
+  const dateFactor = getDateFactor()
+  const cloudFactor = getCloudFactor()
+  const occlusionPenalty = q.buildingOcclusion * 0.5
+  const cloudBonus = cloudFactor.sunsetEnhancement * (q.cloudEnhancement / 100) * 0.3
+  const dateBonus = dateFactor.factor * 10
+  const score = Math.min(100, Math.max(0,
+    q.photoAngle * 0.35 +
+    q.backlightScore * 0.2 +
+    (q.goldenHourDuration + q.blueHourDuration) * 0.25 +
+    cloudBonus +
+    dateBonus -
+    occlusionPenalty
+  ))
+  return Math.round(score)
+}
+
+export function getSunsetQualityLabel(score) {
+  if (score >= 90) return { label: '极佳', color: '#ffd700', stars: 5 }
+  if (score >= 75) return { label: '优秀', color: '#ff8c42', stars: 4 }
+  if (score >= 60) return { label: '良好', color: '#10b981', stars: 3 }
+  if (score >= 40) return { label: '一般', color: '#60a5fa', stars: 2 }
+  return { label: '较差', color: '#9ca3af', stars: 1 }
+}
+
+export function checkDecorFit(seat) {
+  const seatType = SEAT_TYPES.find(t => t.id === seat?.type)
+  if (!seatType) return { fits: true, overflowItems: [], message: '' }
+  const selectedItems = getSelectedDecorItems()
+  const maxItems = seatType.maxDecorItems
+  const overflowItems = selectedItems.filter(item => {
+    if (item.requires && item.requires.length > 0) {
+      return !item.requires.includes(seat.type) && !item.requires.includes(seat.zoneId)
+    }
+    return false
+  })
+  const countOverflow = selectedItems.length > maxItems
+  const fits = !countOverflow && overflowItems.length === 0
+  let message = ''
+  if (countOverflow) {
+    message = `桌面容量不足，最多可摆放 ${maxItems} 项布置，当前选择 ${selectedItems.length} 项`
+  } else if (overflowItems.length > 0) {
+    message = `${overflowItems.map(i => i.name).join('、')} 不适合此座位类型`
+  }
+  return { fits, overflowItems, countOverflow, maxItems, currentCount: selectedItems.length, message }
+}
+
+export function getAdjacentZoneOptions(zoneId) {
+  const zone = ZONES.find(z => z.id === zoneId)
+  if (!zone) return []
+  return ZONES.filter(z => zone.adjacentZones?.includes(z.id) && !isZoneClosed(z.id))
+}
+
+export function getBetterDecorZones(seat) {
+  const currentFit = checkDecorFit(seat)
+  if (currentFit.fits) return []
+  const zone = ZONES.find(z => z.id === seat.zoneId)
+  const adjacentZones = zone?.adjacentZones || []
+  const betterOptions = []
+  for (const zId of adjacentZones) {
+    const zSeats = store.seats.filter(s => s.zoneId === zId && s.status === 'available')
+    if (zSeats.length > 0) {
+      const sampleSeat = zSeats[0]
+      const fit = checkDecorFit(sampleSeat)
+      const z = ZONES.find(zone => zone.id === zId)
+      if (fit.fits || fit.currentCount < currentFit.currentCount) {
+        betterOptions.push({
+          zoneId: zId,
+          zoneName: z?.name || zId,
+          zoneColor: z?.color || '#999',
+          minSpend: z?.minSpend || 0,
+          sunsetScore: calculateSunsetScore(z),
+          availableCount: zSeats.length,
+          fitsBetter: fit.fits
+        })
+      }
+    }
+  }
+  return betterOptions.sort((a, b) => b.sunsetScore - a.sunsetScore)
 }

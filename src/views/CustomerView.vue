@@ -55,6 +55,10 @@
         </div>
       </section>
 
+      <section class="sunset-section">
+        <SunsetRecommendation @zone-select="onSunsetZoneSelect" />
+      </section>
+
       <section class="zones-section">
         <div class="section-head">
           <h2 class="section-title">📍 露台分区</h2>
@@ -75,12 +79,20 @@
           <button
             v-for="zone in ZONES" :key="zone.id"
             class="zone-tab"
-            :class="{ active: store.selectedZoneId === zone.id, indoor: zone.isIndoor }"
+            :class="{ active: store.selectedZoneId === zone.id, indoor: zone.isIndoor, closed: isZoneClosed(zone.id) }"
             :style="getTabStyle(zone)"
-            @click="selectZone(zone.id)"
+            @click="handleZoneTabClick(zone)"
           >
             <span class="tab-name">{{ zone.name }}</span>
-            <span class="tab-count">{{ getZoneAvailable(zone.id) }}空</span>
+            <span class="tab-count" v-if="!isZoneClosed(zone.id)">{{ getZoneAvailable(zone.id) }}空</span>
+            <span class="tab-count closed" v-else>已关闭</span>
+            <div class="tab-sunset-score" v-if="!zone.isIndoor && !isZoneClosed(zone.id)">
+              <span class="score-star">★</span>
+              <span class="score-text">{{ getSunsetQualityLabel(calculateSunsetScore(zone)).label }}</span>
+            </div>
+            <div v-if="isZoneClosed(zone.id) && getZoneRelocation(zone.id)" class="tab-relocation">
+              → {{ getRelocationZoneName(zone.id) }}
+            </div>
           </button>
         </div>
 
@@ -159,13 +171,18 @@ import SeatMap from '../components/SeatMap.vue'
 import SeatDetail from '../components/SeatDetail.vue'
 import PackagesSection from '../components/PackagesSection.vue'
 import LiveSchedule from '../components/LiveSchedule.vue'
+import SunsetRecommendation from '../components/SunsetRecommendation.vue'
 import { ZONES, SEAT_TYPES, FLOOR_INFO, WEATHER_INFO } from '../data/seatsData'
 import {
   store,
   selectZone, setFilterType, setFilterCapacity, toggleRainCover,
   availableSeatsCount, totalSeatsCount,
   getSelectedTotalPrice, getSelectedTotalDeposit, seatsByZone,
-  toggleSeatSelection
+  toggleSeatSelection,
+  calculateSunsetScore,
+  getSunsetQualityLabel,
+  isZoneClosed,
+  getZoneRelocation
 } from '../store/bookingStore'
 
 const detailSeat = ref(null)
@@ -207,6 +224,21 @@ function onSeatConfirm() {
 
 function handleCheckout() {
   alert(`预订成功！\n\n座位：${selectedNames.value}\n时段：${store.selectedTimeSlot?.name}\n有效低消合计：¥${getSelectedTotalPrice()}\n订金（有效低消×30%）：¥${getSelectedTotalDeposit()}\n\n（演示模式，实际请对接支付系统)`)
+}
+
+function onSunsetZoneSelect(zoneId) {
+  selectZone(zoneId)
+}
+
+function handleZoneTabClick(zone) {
+  if (isZoneClosed(zone.id)) return
+  selectZone(zone.id)
+}
+
+function getRelocationZoneName(zoneId) {
+  const targetId = getZoneRelocation(zoneId)
+  const targetZone = ZONES.find(z => z.id === targetId)
+  return targetZone?.name || '室内'
 }
 </script>
 
@@ -417,6 +449,10 @@ function handleCheckout() {
   to { transform: translateY(0); }
 }
 
+.sunset-section {
+  margin-bottom: 16px;
+}
+
 .zones-section {
   background: rgba(12, 15, 25, 0.85);
   backdrop-filter: blur(14px);
@@ -486,6 +522,42 @@ function handleCheckout() {
   transition: all 0.25s;
   font-size: 12px;
   font-weight: 500;
+  position: relative;
+}
+
+.zone-tab.closed {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.tab-count.closed {
+  color: #f87171;
+}
+
+.tab-sunset-score {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.score-star {
+  color: #ffd700;
+  font-size: 10px;
+}
+
+.score-text {
+  font-size: 9px;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.tab-relocation {
+  font-size: 9px;
+  color: #6ee7b7;
+  margin-top: 2px;
 }
 
 .zone-tab:hover {

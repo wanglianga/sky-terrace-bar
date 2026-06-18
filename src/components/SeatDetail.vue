@@ -84,18 +84,42 @@
       </div>
     </div>
 
-    <div class="birthday-section" v-if="seat.canBirthdayDecor">
-      <div class="section-label">🎂 生日布置可选</div>
-      <div class="birthday-options">
-        <label class="bday-option">
-          <input type="checkbox" v-model="bdayBasic" />
-          <span>基础布置（气球+蜡烛）<em>+¥99</em></span>
-        </label>
-        <label class="bday-option">
-          <input type="checkbox" v-model="bdayPremium" />
-          <span>尊享布置（花艺+投影+蛋糕）<em>+¥399</em></span>
-        </label>
+    <div class="sunset-info-section" v-if="!zone?.isIndoor">
+      <div class="section-label">� 晚霞观景质量</div>
+      <div class="sunset-stats">
+        <div class="sun-stat">
+          <span class="stat-icon">📸</span>
+          <div class="stat-text">
+            <div class="stat-num">{{ zone?.sunsetQuality?.photoAngle || 0 }}°</div>
+            <div class="stat-desc">拍照角度</div>
+          </div>
+        </div>
+        <div class="sun-stat">
+          <span class="stat-icon">🌞</span>
+          <div class="stat-text">
+            <div class="stat-num">{{ getBacklightText(zone?.sunsetQuality?.backlightLevel) }}</div>
+            <div class="stat-desc">逆光程度</div>
+          </div>
+        </div>
+        <div class="sun-stat">
+          <span class="stat-icon">⏱️</span>
+          <div class="stat-text">
+            <div class="stat-num">{{ (zone?.sunsetQuality?.goldenHourDuration || 0) + (zone?.sunsetQuality?.blueHourDuration || 0) }}分钟</div>
+            <div class="stat-desc">观景时长</div>
+          </div>
+        </div>
+        <div class="sun-stat">
+          <span class="stat-icon">🏢</span>
+          <div class="stat-text">
+            <div class="stat-num">{{ zone?.sunsetQuality?.buildingOcclusion || 0 }}%</div>
+            <div class="stat-desc">楼体遮挡</div>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <div class="birthday-section" v-if="seat.canBirthdayDecor">
+      <BirthdayDecorPreview :seat="seat" @switch-zone="handleSwitchZone" />
     </div>
 
     <div class="night-atmosphere">
@@ -137,7 +161,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { ZONES, SEAT_TYPES } from '../data/seatsData'
-import { store, getSeatEffectivePrice, getSeatDeposit, toggleSeatSelection } from '../store/bookingStore'
+import { store, getSeatEffectivePrice, getSeatDeposit, toggleSeatSelection, selectZone } from '../store/bookingStore'
+import BirthdayDecorPreview from './BirthdayDecorPreview.vue'
 
 watch(() => props.seat?.id, () => {
   resetPhotoError()
@@ -147,10 +172,7 @@ const props = defineProps({
   seat: { type: Object, default: null }
 })
 
-const emit = defineEmits(['close', 'confirm'])
-
-const bdayBasic = ref(false)
-const bdayPremium = ref(false)
+const emit = defineEmits(['close', 'confirm', 'switch-zone'])
 
 const zone = computed(() => ZONES.find(z => z.id === props.seat?.zoneId))
 const zoneColor = computed(() => zone.value?.color || '#ff6b35')
@@ -168,6 +190,17 @@ const confirmBtnBg = computed(() => `linear-gradient(135deg, ${zoneColor.value},
 
 function getSeatIcon(type) {
   return seatTypeInfo.value?.icon || '🪑'
+}
+
+function getBacklightText(level) {
+  const map = { high: '强逆光', medium: '中度', low: '轻微', none: '无逆光' }
+  return map[level] || '未知'
+}
+
+function handleSwitchZone(zoneId) {
+  selectZone(zoneId)
+  emit('switch-zone', zoneId)
+  emit('close')
 }
 
 const photoLoadError = ref(false)
@@ -395,9 +428,48 @@ function handleConfirm() {
   margin-bottom: 10px;
 }
 
-.risk-section, .birthday-section, .night-atmosphere {
+.sunset-info-section, .risk-section, .birthday-section, .night-atmosphere {
   padding: 12px 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sunset-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.sun-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: rgba(255, 140, 66, 0.05);
+  border: 1px solid rgba(255, 140, 66, 0.15);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.sun-stat .stat-icon {
+  font-size: 20px;
+}
+
+.sun-stat .stat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sun-stat .stat-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+.sun-stat .stat-desc {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .risk-list { display: flex; flex-direction: column; gap: 6px; }

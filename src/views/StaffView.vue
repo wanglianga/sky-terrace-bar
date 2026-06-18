@@ -64,6 +64,13 @@
                   <div class="action-desc">临时价格调整</div>
                 </div>
               </button>
+              <button class="action-btn" @click="mode = 'closezone'" :class="{ active: mode === 'closezone' }">
+                <span>🚧</span>
+                <div>
+                  <div class="action-name">区域关闭</div>
+                  <div class="action-desc">临时关闭露台</div>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -171,6 +178,54 @@
             </div>
           </div>
 
+          <div class="sidebar-section" v-if="mode === 'closezone'">
+            <h3 class="side-title">🚧 区域关闭管理</h3>
+            <div class="closezone-list">
+              <div
+                v-for="zone in ZONES.filter(z => !z.isIndoor)"
+                :key="zone.id"
+                class="zone-close-item"
+                :class="{ closed: isZoneClosed(zone.id) }"
+              >
+                <div class="zone-close-info">
+                  <span class="zone-dot" :style="{ background: zone.color }"></span>
+                  <span class="zone-close-name">{{ zone.name }}</span>
+                  <span class="zone-close-status" :class="{ on: isZoneClosed(zone.id) }">
+                    {{ isZoneClosed(zone.id) ? '已关闭' : '营业中' }}
+                  </span>
+                </div>
+                <div class="zone-close-actions">
+                  <button
+                    v-if="!isZoneClosed(zone.id)"
+                    class="close-zone-btn"
+                    @click="closeZoneAndSetRelocation(zone.id)"
+                  >
+                    关闭
+                  </button>
+                  <button v-else class="open-zone-btn" @click="openOneZone(zone.id)">
+                    开启
+                  </button>
+                </div>
+                <div v-if="isZoneClosed(zone.id)" class="relocation-setting">
+                  <label class="relocate-label">迁移至：</label>
+                  <select
+                    v-model="relocationTargets[zone.id]"
+                    class="relocate-select"
+                    @change="setRelocationForZone(zone.id)"
+                  >
+                    <option v-for="tz in getRelocatableZones(zone.id)" :key="tz.id" :value="tz.id">
+                      {{ tz.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="closed-summary" v-if="closedZoneCount > 0">
+              <span>当前关闭 {{ closedZoneCount }} 个区域</span>
+              <button class="open-all-btn" @click="openAllZones">全部开启</button>
+            </div>
+          </div>
+
           <div class="sidebar-section mode-info" v-if="mode">
             <div class="info-bar" :class="mode">
               <span class="info-text">{{ modeHint }}</span>
@@ -184,12 +239,16 @@
             <button
               v-for="zone in ZONES" :key="zone.id"
               class="zone-btn"
-              :class="{ active: activeZoneId === zone.id, indoor: zone.isIndoor }"
+              :class="{ active: activeZoneId === zone.id, indoor: zone.isIndoor, closed: isZoneClosed(zone.id) }"
               :style="{ '--zc': zone.color }"
               @click="activeZoneId = zone.id"
             >
               <span class="zone-name">{{ zone.name }}</span>
-              <span class="zone-sub">{{ getZoneAvail(zone.id) }}/{{ getZoneTotal(zone.id) }}</span>
+              <span class="zone-sub" v-if="!isZoneClosed(zone.id)">{{ getZoneAvail(zone.id) }}/{{ getZoneTotal(zone.id) }}</span>
+              <span class="zone-sub closed" v-else>已关闭</span>
+              <span v-if="isZoneClosed(zone.id) && getZoneRelocation(zone.id)" class="zone-relocate">
+                → {{ getRelocName(zone.id) }}
+              </span>
             </button>
           </div>
 
@@ -264,7 +323,8 @@ import {
   holdSeat, releaseSeat,
   combineSeats,
   moveToIndoor, revertMoveToIndoor,
-  modifySeatPrice, getSeatEffectivePrice
+  modifySeatPrice, getSeatEffectivePrice,
+  closeZone, openZone, setZoneRelocation, isZoneClosed, getZoneRelocation
 } from '../store/bookingStore'
 
 const mode = ref('hold')
@@ -276,6 +336,7 @@ const holdCustomer = ref('')
 const holdRemark = ref('')
 const newPriceValue = ref(0)
 const presetPrices = [188, 288, 388, 588, 888, 1288, 1888]
+const relocationTargets = reactive({})
 
 const heldCount = computed(() => store.seats.filter(s => s.status === 'held').length)
 const reservedCount = computed(() => store.seats.filter(s => s.status === 'reserved').length)
@@ -284,15 +345,53 @@ const movedSeats = computed(() => store.seats.filter(s => s._moved))
 
 const combineTotalCapacity = computed(() => selectedSeats.reduce((a, s) => a + (s.capacity || 0), 0))
 
+const closedZoneCount = computed(() => store.closedZones.length)
+
 const modeHint = computed(() => {
   const hints = {
     hold: '当前模式：【迟到保留】 - 点击可选座位进行保留',
     combine: '当前模式：【临时拼桌】 - 选择2个以上座位合并',
     move: '当前模式：【室内迁移】 - 选择室外座位迁入室内',
-    price: '当前模式：【包厢改价】 - 点击座位修改价格'
+    price: '当前模式：【包厢改价】 - 点击座位修改价格',
+    closezone: '当前模式：【区域关闭】 - 管理露台区域开放状态'
   }
   return hints[mode.value] || ''
 })
+
+function getRelocatableZones(zoneId) {
+  return ZONES.filter(z => z.id !== zoneId)
+}
+
+function closeZoneAndSetRelocation(zoneId) {
+  closeZone(zoneId)
+  const defaultTarget = ZONES.find(z => z.isIndoor)?.id || 'indoor'
+  if (!relocationTargets[zoneId]) {
+    relocationTargets[zoneId] = defaultTarget
+  }
+  setZoneRelocation(zoneId, relocationTargets[zoneId])
+}
+
+function openOneZone(zoneId) {
+  openZone(zoneId)
+  delete relocationTargets[zoneId]
+}
+
+function setRelocationForZone(zoneId) {
+  setZoneRelocation(zoneId, relocationTargets[zoneId])
+}
+
+function openAllZones() {
+  for (const zid of [...store.closedZones]) {
+    openZone(zid)
+    delete relocationTargets[zid]
+  }
+}
+
+function getRelocName(zoneId) {
+  const targetId = getZoneRelocation(zoneId)
+  const targetZone = ZONES.find(z => z.id === targetId)
+  return targetZone?.name || '室内'
+}
 
 const displayedTables = computed(() => {
   return store.seats.filter(s => !s._hidden && s.status !== 'combined').slice(0, 30)
@@ -767,6 +866,149 @@ function getArrivedAgo(dtStr) {
   border-color: rgba(255, 140, 66, 0.2) !important;
 }
 
+.closezone-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zone-close-item {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.zone-close-item.closed {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.zone-close-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.zone-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.zone-close-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+}
+
+.zone-close-status {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+.zone-close-status.on {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.zone-close-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.close-zone-btn, .open-zone-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid;
+}
+
+.close-zone-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.close-zone-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.open-zone-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.open-zone-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.relocation-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.relocate-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.relocate-select {
+  flex: 1;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 11px;
+  outline: none;
+}
+
+.closed-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.open-all-btn {
+  padding: 5px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #6ee7b7;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.open-all-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
 .info-bar {
   display: flex;
   justify-content: space-between;
@@ -822,6 +1064,23 @@ function getArrivedAgo(dtStr) {
   border-color: var(--zc);
   box-shadow: 0 0 0 1px var(--zc), 0 4px 14px color-mix(in srgb, var(--zc) 25%, transparent);
   color: white;
+}
+
+.zone-btn.closed {
+  opacity: 0.5;
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.zone-sub.closed {
+  color: #f87171;
+}
+
+.zone-relocate {
+  display: block;
+  font-size: 9px;
+  color: #6ee7b7;
+  margin-top: 2px;
 }
 
 .zone-name { display: block; font-size: 13px; font-weight: 700; color: inherit; }

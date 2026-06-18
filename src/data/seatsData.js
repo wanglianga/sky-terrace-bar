@@ -10,6 +10,19 @@ export const ZONES = [
     hasRainCover: true,
     color: '#ff6b35',
     premium: true,
+    isIndoor: false,
+    sunsetQuality: {
+      photoAngle: 95,
+      backlightLevel: 'high',
+      backlightScore: 25,
+      goldenHourDuration: 45,
+      blueHourDuration: 30,
+      buildingOcclusion: 5,
+      cloudEnhancement: 20,
+      recommendLevel: 'S'
+    },
+    adjacentZones: ['north', 'south'],
+    minSpend: 888,
     viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=city%20rooftop%20bar%20sunset%20view%2C%20golden%20hour%2C%20orange%20purple%20sky%2C%20sun%20dipping%20below%20skyscrapers%2C%20silhouette%20of%20city%20skyline%2C%20luxury%20terrace%20atmosphere%2C%20wide%20angle%20panoramic%20view&image_size=landscape_16_9'
   },
   {
@@ -23,6 +36,19 @@ export const ZONES = [
     hasRainCover: true,
     color: '#00d4ff',
     premium: true,
+    isIndoor: false,
+    sunsetQuality: {
+      photoAngle: 70,
+      backlightLevel: 'medium',
+      backlightScore: 55,
+      goldenHourDuration: 25,
+      blueHourDuration: 40,
+      buildingOcclusion: 15,
+      cloudEnhancement: 10,
+      recommendLevel: 'A'
+    },
+    adjacentZones: ['west', 'east', 'indoor'],
+    minSpend: 688,
     viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stunning%20city%20skyline%20view%20from%20rooftop%20bar%2C%20modern%20skyscrapers%20with%20glass%20facades%20reflecting%20twilight%20sky%2C%20purple%20blue%20hour%20atmosphere%2C%20panoramic%20metropolitan%20view&image_size=landscape_16_9'
   },
   {
@@ -36,6 +62,19 @@ export const ZONES = [
     hasRainCover: false,
     color: '#10b981',
     premium: false,
+    isIndoor: false,
+    sunsetQuality: {
+      photoAngle: 80,
+      backlightLevel: 'low',
+      backlightScore: 75,
+      goldenHourDuration: 35,
+      blueHourDuration: 35,
+      buildingOcclusion: 10,
+      cloudEnhancement: 15,
+      recommendLevel: 'A'
+    },
+    adjacentZones: ['west', 'indoor'],
+    minSpend: 588,
     viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=riverside%20night%20view%20from%20rooftop%20bar%2C%20wide%20river%20with%20reflecting%20city%20lights%2C%20illuminated%20bridge%20spanning%20across%2C%20sparkling%20water%2C%20warm%20golden%20lights%20on%20opposite%20bank&image_size=landscape_16_9'
   },
   {
@@ -49,6 +88,19 @@ export const ZONES = [
     hasRainCover: true,
     color: '#ffd700',
     premium: false,
+    isIndoor: false,
+    sunsetQuality: {
+      photoAngle: 45,
+      backlightLevel: 'none',
+      backlightScore: 95,
+      goldenHourDuration: 15,
+      blueHourDuration: 20,
+      buildingOcclusion: 30,
+      cloudEnhancement: 5,
+      recommendLevel: 'B'
+    },
+    adjacentZones: ['north', 'indoor'],
+    minSpend: 368,
     viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=luxury%20rooftop%20bar%20interior%2C%20elegant%20bartender%20mixing%20cocktails%20at%20marble%20counter%2C%20backlit%20liquor%20bottles%20display%2C%20warm%20ambient%20lighting%2C%20cozy%20atmosphere%20with%20city%20view%20through%20windows&image_size=landscape_16_9'
   },
   {
@@ -63,17 +115,62 @@ export const ZONES = [
     color: '#9b59b6',
     premium: true,
     isIndoor: true,
+    sunsetQuality: {
+      photoAngle: 30,
+      backlightLevel: 'none',
+      backlightScore: 100,
+      goldenHourDuration: 0,
+      blueHourDuration: 0,
+      buildingOcclusion: 0,
+      cloudEnhancement: 0,
+      recommendLevel: 'C'
+    },
+    adjacentZones: ['north', 'south', 'east'],
+    minSpend: 1588,
     viewImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=luxury%20private%20VIP%20lounge%20interior%2C%20plush%20velvet%20sofas%2C%20crystal%20chandelier%2C%20ambient%20purple%20mood%20lighting%2C%20floor%20to%20ceiling%20windows%20showing%20city%20night%20skyline%2C%20exclusive%20upscale%20atmosphere&image_size=landscape_16_9'
   }
 ]
 
 export const SEAT_TYPES = [
-  { id: 'railing', name: '靠栏杆位', icon: '🌅', desc: '紧贴露台边缘，无遮挡视野', priceMultiplier: 1.5 },
-  { id: 'high', name: '高脚桌', icon: '🍸', desc: '高脚桌椅，适合小聚聊天', priceMultiplier: 1.2 },
-  { id: 'sofa', name: '沙发角', icon: '🛋️', desc: '舒适沙发，宽敞私密', priceMultiplier: 1.3 },
-  { id: 'bar', name: '吧台位', icon: '🍹', desc: '直面调酒师，互动体验', priceMultiplier: 1.0 },
-  { id: 'table', name: '普通方桌', icon: '🪑', desc: '标准桌椅，经济实惠', priceMultiplier: 1.0 },
-  { id: 'vip', name: 'VIP包厢', icon: '👑', desc: '独立空间，专属服务', priceMultiplier: 2.0 }
+  { id: 'railing', name: '靠栏杆位', icon: '🌅', desc: '紧贴露台边缘，无遮挡视野', priceMultiplier: 1.5, tableWidth: 120, tableDepth: 60, maxDecorItems: 3 },
+  { id: 'high', name: '高脚桌', icon: '🍸', desc: '高脚桌椅，适合小聚聊天', priceMultiplier: 1.2, tableWidth: 80, tableDepth: 80, maxDecorItems: 2 },
+  { id: 'sofa', name: '沙发角', icon: '🛋️', desc: '舒适沙发，宽敞私密', priceMultiplier: 1.3, tableWidth: 150, tableDepth: 80, maxDecorItems: 5 },
+  { id: 'bar', name: '吧台位', icon: '🍹', desc: '直面调酒师，互动体验', priceMultiplier: 1.0, tableWidth: 60, tableDepth: 40, maxDecorItems: 1 },
+  { id: 'table', name: '普通方桌', icon: '🪑', desc: '标准桌椅，经济实惠', priceMultiplier: 1.0, tableWidth: 100, tableDepth: 100, maxDecorItems: 3 },
+  { id: 'vip', name: 'VIP包厢', icon: '👑', desc: '独立空间，专属服务', priceMultiplier: 2.0, tableWidth: 200, tableDepth: 120, maxDecorItems: 8 }
+]
+
+export const BIRTHDAY_DECOR_ITEMS = [
+  { id: 'bouquet', name: '生日花束', icon: '💐', price: 199, size: { width: 30, depth: 30 }, setupTime: 5, description: '精选玫瑰向日葵混搭花束', position: 'center-left', requires: [] },
+  { id: 'cake', name: '蛋糕冷藏', icon: '🎂', price: 0, size: { width: 35, depth: 35 }, setupTime: 2, description: '免费提供蛋糕盘和餐具，需自带蛋糕', position: 'center', requires: [] },
+  { id: 'lightsign', name: '生日灯牌', icon: '✨', price: 129, size: { width: 60, depth: 10 }, setupTime: 10, description: 'LED生日快乐灯牌，可定制文字', position: 'backdrop', requires: [] },
+  { id: 'champagne', name: '香槟塔', icon: '🍾', price: 599, size: { width: 50, depth: 50 }, setupTime: 15, description: '三层香槟塔，含6瓶起泡酒', position: 'center-right', requires: ['sofa', 'vip', 'table'] },
+  { id: 'projection', name: '投影字幕', icon: '📽️', price: 299, size: { width: 0, depth: 0 }, setupTime: 20, description: '定制生日祝福投影，可加名字和照片', position: 'wall', requires: ['sofa', 'vip', 'indoor'] },
+  { id: 'balloons', name: '气球布置', icon: '🎈', price: 89, size: { width: 80, depth: 20 }, setupTime: 15, description: '马卡龙色系气球串，环绕桌面', position: 'perimeter', requires: [] },
+  { id: 'rosepetals', name: '玫瑰花瓣', icon: '🌹', price: 69, size: { width: 40, depth: 40 }, setupTime: 5, description: '新鲜玫瑰花瓣铺桌，浪漫氛围', position: 'table-top', requires: [] },
+  { id: 'candles', name: '氛围蜡烛', icon: '🕯️', price: 49, size: { width: 20, depth: 20 }, setupTime: 3, description: '无烟香薰蜡烛，营造温馨氛围', position: 'corners', requires: [] }
+]
+
+export const CLOUD_COVERAGE_OPTIONS = [
+  { id: 'clear', name: '万里无云', icon: '☀️', cloudPercent: 0, sunsetEnhancement: 80, description: '天空通透，落日色彩鲜明' },
+  { id: 'light', name: '少云', icon: '⛅', cloudPercent: 20, sunsetEnhancement: 100, description: '云彩点缀，晚霞层次丰富' },
+  { id: 'medium', name: '多云', icon: '☁️', cloudPercent: 50, sunsetEnhancement: 70, description: '云层较多，可能有丁达尔效应' },
+  { id: 'heavy', name: '阴天', icon: '🌥️', cloudPercent: 80, sunsetEnhancement: 30, description: '云层厚重，晚霞效果一般' }
+]
+
+export const SUNSET_DATE_FACTORS = [
+  { month: 1, factor: 0.7, sunsetTime: '17:20', goldenHour: 30 },
+  { month: 2, factor: 0.8, sunsetTime: '17:50', goldenHour: 35 },
+  { month: 3, factor: 0.9, sunsetTime: '18:20', goldenHour: 40 },
+  { month: 4, factor: 1.0, sunsetTime: '18:45', goldenHour: 45 },
+  { month: 5, factor: 1.05, sunsetTime: '19:05', goldenHour: 48 },
+  { month: 6, factor: 1.1, sunsetTime: '19:20', goldenHour: 50 },
+  { month: 7, factor: 1.08, sunsetTime: '19:15', goldenHour: 48 },
+  { month: 8, factor: 1.0, sunsetTime: '18:50', goldenHour: 45 },
+  { month: 9, factor: 0.95, sunsetTime: '18:10', goldenHour: 40 },
+  { month: 10, factor: 0.85, sunsetTime: '17:30', goldenHour: 35 },
+  { month: 11, factor: 0.75, sunsetTime: '17:00', goldenHour: 30 },
+  { month: 12, factor: 0.65, sunsetTime: '16:50', goldenHour: 25 }
 ]
 
 function generateSeats() {
